@@ -1,14 +1,15 @@
 {
-  "name": "nextjs",
+  "name": "vix-futures-historical-p",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "dev": "npx next dev",
+    "build": "npx next build",
+    "start": "npx next start"
   },
   "dependencies": {
-    "next": "10.x",
+    "next": "^10.2.3",
+    "puppeteer": "^10.1.0",
     "react": "17.x",
     "react-dom": "17.x"
   }
