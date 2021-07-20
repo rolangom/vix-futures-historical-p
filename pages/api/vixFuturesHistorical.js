@@ -1,4 +1,6 @@
-const puppeteer = require('puppeteer');
+// const puppeteer = require('puppeteer');
+const chromium = require('chrome-aws-lambda');
+
 const path = require('path');
 const fs = require('fs');
 // const downloadPath = path.resolve('./download'); // '~/Downloads/'; //
@@ -17,7 +19,7 @@ const timeout = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  function buildDate(inputDateStr) {
   const [year, monthn, day] = inputDateStr.split('-');
   const newMonthn = Number(monthn) - 1;
-  return `${months[newMonthn]} ${day}, ${year}`;
+  return `${months[newMonthn]} ${day.padStart(2, '0')}, ${year}`;
 }
 
 async function clearInputDate(page) {
@@ -29,7 +31,7 @@ async function clearInputDate(page) {
  * @param {string} dateStr 
  */
  async function init(dateStr) {
-  const browser = await puppeteer.launch({ headless: false }); // 
+  const browser = await chromium.puppeteer.launch(); // { headless: false }
   const page = await browser.newPage();
   await page.goto('http://vixcentral.com/', {
     waitUntil: 'networkidle2',
@@ -61,13 +63,28 @@ async function clearInputDate(page) {
   await browser.close();
   const successfullPath = buildSuccessfullPath(newDownloadPath)
   const data = await fs.promises.readFile(successfullPath, 'utf8');
+  checkDate(data, newDateFormated);
   console.log('Fin');
   fs.promises.unlink(successfullPath).then(() =>{}, err => console.error('ignore', err));
   return data;
 }
 
+/**
+ * 
+ * @param {string} data 
+ * @param {string} reqDate 
+ */
+function checkDate(data, reqDate) {
+  const lines = data.split('\n');
+  const [line0] = lines;
+  const dateCol = line0.slice(line0.indexOf(',')+1).replace(/"/g, "");
+  if (dateCol != reqDate) {
+    throw Error(`Date '${reqDate}'not found.`);
+  }
+}
 
-function onSuccess(res, data) {
+
+function onMaybeHandleSuccess(res, data) {
   res.end(data);
 }
 
@@ -79,7 +96,7 @@ function endpoint(request, response) {
   // your code goes here
   const { date } = request.query;
   init(date)
-      .then((data) => onSuccess(response, data), err => onError(err, response))
+      .then((data) => onMaybeHandleSuccess(response, data), err => onError(err, response))
 }
 
 export default endpoint;
